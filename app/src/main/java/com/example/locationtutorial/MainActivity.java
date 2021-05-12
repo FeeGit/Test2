@@ -6,12 +6,14 @@ import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 
 import android.Manifest;
+import android.content.Intent;
 import android.content.IntentSender;
 import android.content.pm.PackageManager;
 import android.location.Location;
 import android.os.Bundle;
 import android.os.Looper;
 import android.util.Log;
+import android.view.View;
 
 import com.google.android.gms.common.api.ResolvableApiException;
 import com.google.android.gms.location.FusedLocationProviderClient;
@@ -57,6 +59,10 @@ public class MainActivity extends AppCompatActivity {
         locationRequest.setInterval(4000);
         locationRequest.setFastestInterval(2000);
         locationRequest.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
+    }
+
+    public void moveMarkerList(View view) {
+        startActivity(new Intent(this, MarkerListActivity.class));
     }
 
     @Override
