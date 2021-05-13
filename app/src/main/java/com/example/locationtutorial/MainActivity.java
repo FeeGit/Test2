@@ -1,15 +1,21 @@
 package com.example.locationtutorial;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 
 import android.Manifest;
+import android.app.AlertDialog;
+import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentSender;
 import android.content.pm.PackageManager;
+import android.database.Cursor;
 import android.location.Location;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Looper;
 import android.util.Log;
@@ -28,6 +34,10 @@ import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
 
+import java.util.Arrays;
+import java.util.Comparator;
+import java.util.Stack;
+
 public class MainActivity extends AppCompatActivity {
 
     private static final String TAG = "MainActivity";
@@ -37,6 +47,7 @@ public class MainActivity extends AppCompatActivity {
     LocationRequest locationRequest;
 
     LocationCallback locationCallback = new LocationCallback() {
+        @RequiresApi(api = Build.VERSION_CODES.M)
         @Override
         public void onLocationResult(LocationResult locationResult) {
             if (locationResult == null) {
@@ -44,6 +55,7 @@ public class MainActivity extends AppCompatActivity {
             }
             for(Location location: locationResult.getLocations()) {     // 받아올때마다 출력.
                 Log.d(TAG, "onLocationResult: " + location.toString()); // 로그 출력.
+                JudgementInNOut();
             }
         }
     };
@@ -166,4 +178,214 @@ public class MainActivity extends AppCompatActivity {
             }
         }
     }
+
+    ///////////////
+    static int N = 0;
+    static Point[] POINTS = new Point[20];
+
+    //이제 마지막이다. ㅠㅠ
+    //http://woowabros.github.io/experience/2018/03/31/hello-geofence.html(이 부분을 참고하면, 비슷한 방식의 문제해결 방법을 볼 수 있다.)
+    @RequiresApi(api = Build.VERSION_CODES.M)
+    public void JudgementInNOut() {
+        //클릭할때마다 초기화를 해주자.
+        POINTS = new Point[20];
+        N = 0;
+        //나의 현재 위치를 가져오자.
+        if (checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && checkSelfPermission(Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(this,new String[] {Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION}, 1000);
+            return;
+        }
+        fusedLocationProviderClient.getLastLocation().addOnSuccessListener(this, new OnSuccessListener<Location>() {
+            @Override
+            public void onSuccess(Location location) {
+                if(location != null){
+                    POINTS[N++] = new Point(location.getLatitude() * 10000, location.getLongitude()*10000);
+                    //Log.d(TAG, "위도 로그: " + location.getLatitude() * 10000); // 로그 출력.
+                    //Log.d(TAG, "경도 로그: " + location.getLongitude() * 10000); // 로그 출력. 여기까진 잘됨. 0513.
+                }
+            }
+        });
+
+
+        //데이터베이스의 위치를 가져오자.
+        MemoDbHelper dbHelper = MemoDbHelper.getInstance(this);
+        Cursor cursor =  dbHelper.getReadableDatabase().query(MemoContract.MemoEntry.TABLE_NAME, null, null, null,null,null,null,null);
+        while(cursor.moveToNext()){
+            String lat = cursor.getString(cursor.getColumnIndexOrThrow(MemoContract.MemoEntry.COLUMN_NAME_LAT));
+            String lng = cursor.getString(cursor.getColumnIndexOrThrow(MemoContract.MemoEntry.COLUMN_NAME_LNG));
+            POINTS[N++] = new Point(Double.parseDouble(lat) * 10000, Double.parseDouble(lng) * 10000);
+        }
+
+        Point MY_POINTS = POINTS[0];
+
+        Arrays.sort(POINTS,0 , N, new Comparator<Point>() {
+            @Override
+            public int compare(Point a, Point b) {
+                if (a.y != b.y) {
+                    if(a.y < b.y){
+                        return -1;
+                    }
+                    else{
+                        return 1;
+                    }
+                }
+                if(a.x < b.x)
+                    return -1;
+                return 1;
+            }
+        });
+
+        for (int i = 1; i < N; i++) {
+            POINTS[i].p = POINTS[i].x - POINTS[0].x;
+            POINTS[i].q = POINTS[i].y - POINTS[0].y;
+        }
+
+        Arrays.sort(POINTS,1 , N-1, new Comparator<Point>() {
+            @Override
+            public int compare(Point a, Point b) {
+                if(a.q*b.p != a.p*b.q){
+                    if(a.q*b.p < a.p*b.q)
+                        return -1;
+                    else
+                        return 1;
+                }
+                if (a.y != b.y) {
+                    if(a.y < b.y){
+                        return -1;
+                    }
+                    else{
+                        return 1;
+                    }
+                }
+                if(a.x < b.x)
+                    return -1;
+                return 1;
+            }
+        });
+
+        Stack<Integer> stack = new Stack<>();
+        stack.add(0);
+        stack.add(1);
+
+        for (int i = 2; i < N; i++) {
+            while(stack.size() >= 2){
+                int first = stack.pop();
+                int second = stack.peek();
+
+                long ccw = find_ccw(POINTS[first], POINTS[second], POINTS[i]);
+                if (ccw > 0) {
+                    stack.add(first);
+                    break;
+                }
+            }
+            stack.add(i);
+        }
+
+
+        boolean isInside = true;
+        for(int i=0;i<stack.size();i++){
+            if(POINTS[stack.get(i)].x == MY_POINTS.x && POINTS[stack.get(i)].y == MY_POINTS.y){
+                isInside = false;
+            }
+        }
+
+        if(isInside){
+            final Context context = this;
+            AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(context);
+
+            alertDialogBuilder.setTitle("위험경보");
+
+            alertDialogBuilder
+                    .setMessage("위험지역에 위치하였습니다.")
+                    .setCancelable(false)
+                    .setPositiveButton("삭제",
+                            new DialogInterface.OnClickListener() {
+                                public void onClick(
+                                        DialogInterface dialog, int id) {
+                                    dialog.cancel();
+                                }
+                            })
+                    .setNegativeButton("취소",
+                            new DialogInterface.OnClickListener() {
+                                public void onClick(
+                                        DialogInterface dialog, int id) {
+                                    // 다이얼로그를 취소한다
+                                    dialog.cancel();
+                                }
+                            });
+
+            // 다이얼로그 생성
+            AlertDialog alertDialog = alertDialogBuilder.create();
+            alertDialog.show();
+        }
+        else{
+            final Context context = this;
+            AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(context);
+
+            alertDialogBuilder.setTitle("경보 아님");
+
+            alertDialogBuilder
+                    .setMessage("경보가 아니에요")
+                    .setCancelable(false)
+                    .setPositiveButton("삭제",
+                            new DialogInterface.OnClickListener() {
+                                public void onClick(
+                                        DialogInterface dialog, int id) {
+                                    dialog.cancel();
+                                }
+                            })
+                    .setNegativeButton("취소",
+                            new DialogInterface.OnClickListener() {
+                                public void onClick(
+                                        DialogInterface dialog, int id) {
+                                    // 다이얼로그를 취소한다
+                                    dialog.cancel();
+                                }
+                            });
+
+            // 다이얼로그 생성
+            AlertDialog alertDialog = alertDialogBuilder.create();
+            alertDialog.show();
+        }
+    }
+
+    protected static long find_dist(Point a, Point b) {
+
+        return (long)(a.x - b.x) * (a.x - b.x) + (long)(a.y - b.y) * (a.y - b.y);
+
+    }
+
+    protected static long find_ccw(Point a, Point b, Point c) {
+
+        return (long)(b.x - a.x) * (long)(c.y - a.y) - (long)(c.x - a.x) * (long)(b.y - a.y);
+    }
+
+    static class Point {
+        long x, y;
+        //기준점으로부터의 상대 위치
+        long p,q;
+
+        public Point(double x, double y) {
+            this.x = (long) x;
+            this.y = (long) y;
+            p=1;
+            q=0;
+        }
+
+        public Point(double x, double y, long p, long q){
+            this.x = (long) x;
+            this.y = (long) y;
+            this.p=p;
+            this.q=q;
+        }
+
+        public Point(long x, long y) {
+            this.x = x;
+            this.y = y;
+            p=1;
+            q=0;
+        }
+    }
+
+    ///////////////
 }
