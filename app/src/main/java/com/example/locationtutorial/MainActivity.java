@@ -42,8 +42,8 @@ public class MainActivity extends AppCompatActivity {
             if (locationResult == null) {
                 return;
             }
-            for(Location location: locationResult.getLocations()) {
-                Log.d(TAG, "onLocationResult: " + location.toString());
+            for(Location location: locationResult.getLocations()) {     // 받아올때마다 출력.
+                Log.d(TAG, "onLocationResult: " + location.toString()); // 로그 출력.
             }
         }
     };
@@ -56,8 +56,8 @@ public class MainActivity extends AppCompatActivity {
         fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(this);
 
         locationRequest = LocationRequest.create();
-        locationRequest.setInterval(4000);
-        locationRequest.setFastestInterval(2000);
+        locationRequest.setInterval(4000);      //업데이트 간격 4000ms
+        locationRequest.setFastestInterval(2000);       //빠르면 2000ms
         locationRequest.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
     }
 
@@ -69,7 +69,7 @@ public class MainActivity extends AppCompatActivity {
     protected void onStart() {
         super.onStart();
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
-//            getLastLocation();
+//            getLastLocation();        //가장 마지막의 위치 체크.
             checkSettingsAndStartLocationUpdates();
         } else {
             askLocationPermission();
