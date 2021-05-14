@@ -209,15 +209,19 @@ public class MainActivity extends AppCompatActivity {
 
         //데이터베이스의 위치를 가져오자.
         MemoDbHelper dbHelper = MemoDbHelper.getInstance(this);
+        //Cursor 에 담아서
         Cursor cursor =  dbHelper.getReadableDatabase().query(MemoContract.MemoEntry.TABLE_NAME, null, null, null,null,null,null,null);
+        //전체를 배열에 담기
         while(cursor.moveToNext()){
             String lat = cursor.getString(cursor.getColumnIndexOrThrow(MemoContract.MemoEntry.COLUMN_NAME_LAT));
             String lng = cursor.getString(cursor.getColumnIndexOrThrow(MemoContract.MemoEntry.COLUMN_NAME_LNG));
             POINTS[N++] = new Point(Double.parseDouble(lat) * 10000, Double.parseDouble(lng) * 10000);
         }
 
+        //나의 위치는 따로 저장.
         Point MY_POINTS = POINTS[0];
 
+        //y를 우선으로 '/' 처럼 아래에서 위로 정렬
         Arrays.sort(POINTS,0 , N, new Comparator<Point>() {
             @Override
             public int compare(Point a, Point b) {
@@ -235,11 +239,13 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
+        //이제 0을 기준으로 상대 위치를 새롭게 정의해준다. 이를 위해서 아래를 우선적으로 정렬한 것이다.
         for (int i = 1; i < N; i++) {
             POINTS[i].p = POINTS[i].x - POINTS[0].x;
             POINTS[i].q = POINTS[i].y - POINTS[0].y;
         }
 
+        //이제 기준점 0 을 제외한 것들을 상대위치를 활용하여 정렬
         Arrays.sort(POINTS,1 , N-1, new Comparator<Point>() {
             @Override
             public int compare(Point a, Point b) {
@@ -263,17 +269,22 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
+        // Stack 에는 데이터 절약을 위해 Index 만 저장
         Stack<Integer> stack = new Stack<>();
         stack.add(0);
         stack.add(1);
 
+        //모든 데이터가 스택에 들어갈 수 있도록 전체 반복
         for (int i = 2; i < N; i++) {
+            //사이즈가 2보다 크면
             while(stack.size() >= 2){
                 int first = stack.pop();
                 int second = stack.peek();
 
+                //들어있는 점들을 확인하여서 가장 외부의 점인지를 확인한다.
                 long ccw = find_ccw(POINTS[first], POINTS[second], POINTS[i]);
                 if (ccw > 0) {
+                    //맞으면 stack에 담아준다.
                     stack.add(first);
                     break;
                 }
@@ -281,7 +292,7 @@ public class MainActivity extends AppCompatActivity {
             stack.add(i);
         }
 
-
+        //이제 나의 위치가 영역의 내부인지 외부인지 확인을 해주자.
         boolean isInside = true;
         for(int i=0;i<stack.size();i++){
             if(POINTS[stack.get(i)].x == MY_POINTS.x && POINTS[stack.get(i)].y == MY_POINTS.y){
