@@ -15,12 +15,10 @@
 
         <activity
             android:name=".MarkerAddActivity"
-            android:parentActivityName=".MarkerListActivity"
-            ></activity>
+            android:parentActivityName=".MarkerListActivity" />
         <activity
             android:name=".MarkerListActivity"
-            android:parentActivityName=".MainActivity"
-            ></activity>
+            android:parentActivityName=".MainActivity" />
         <activity android:name=".MainActivity">
 
             <intent-filter>

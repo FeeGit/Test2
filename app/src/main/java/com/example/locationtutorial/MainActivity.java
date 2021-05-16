@@ -14,6 +14,7 @@ import android.content.Intent;
 import android.content.IntentSender;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
+import android.graphics.Point;
 import android.location.Location;
 import android.os.Build;
 import android.os.Bundle;
@@ -53,7 +54,7 @@ public class MainActivity extends AppCompatActivity {
             if (locationResult == null) {
                 return;
             }
-            for(Location location: locationResult.getLocations()) {     // 받아올때마다 출력.
+            for (Location location : locationResult.getLocations()) {     // 받아올때마다 출력.
                 Log.d(TAG, "onLocationResult: " + location.toString()); // 로그 출력.
                 JudgementInNOut();
             }
@@ -123,8 +124,17 @@ public class MainActivity extends AppCompatActivity {
     }
 
 
-
     private void startLocationUpdates() {
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            // TODO: Consider calling
+            //    ActivityCompat#requestPermissions
+            // here to request the missing permissions, and then overriding
+            //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
+            //                                          int[] grantResults)
+            // to handle the case where the user grants the permission. See the documentation
+            // for ActivityCompat#requestPermissions for more details.
+            return;
+        }
         fusedLocationProviderClient.requestLocationUpdates(locationRequest, locationCallback, Looper.getMainLooper());
     }
 
@@ -133,6 +143,16 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void getLastLocation() {
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            // TODO: Consider calling
+            //    ActivityCompat#requestPermissions
+            // here to request the missing permissions, and then overriding
+            //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
+            //                                          int[] grantResults)
+            // to handle the case where the user grants the permission. See the documentation
+            // for ActivityCompat#requestPermissions for more details.
+            return;
+        }
         Task<Location> locationTask = fusedLocationProviderClient.getLastLocation();
         locationTask.addOnSuccessListener(new OnSuccessListener<Location>() {
             @Override
@@ -183,8 +203,6 @@ public class MainActivity extends AppCompatActivity {
     static int N = 0;
     static Point[] POINTS = new Point[20];
 
-    //이제 마지막이다. ㅠㅠ
-    //http://woowabros.github.io/experience/2018/03/31/hello-geofence.html(이 부분을 참고하면, 비슷한 방식의 문제해결 방법을 볼 수 있다.)
     @RequiresApi(api = Build.VERSION_CODES.M)
     public void JudgementInNOut() {
         //클릭할때마다 초기화를 해주자.
@@ -199,9 +217,8 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onSuccess(Location location) {
                 if(location != null){
+                    //가져온 위치를 배열에 저장한다.
                     POINTS[N++] = new Point(location.getLatitude() * 10000, location.getLongitude()*10000);
-                    //Log.d(TAG, "위도 로그: " + location.getLatitude() * 10000); // 로그 출력.
-                    //Log.d(TAG, "경도 로그: " + location.getLongitude() * 10000); // 로그 출력. 여기까진 잘됨. 0513.
                 }
             }
         });
@@ -209,19 +226,18 @@ public class MainActivity extends AppCompatActivity {
 
         //데이터베이스의 위치를 가져오자.
         MemoDbHelper dbHelper = MemoDbHelper.getInstance(this);
-        //Cursor 에 담아서
+        //커서에 담아서
         Cursor cursor =  dbHelper.getReadableDatabase().query(MemoContract.MemoEntry.TABLE_NAME, null, null, null,null,null,null,null);
-        //전체를 배열에 담기
+        //전체를 배열에 담아준다.
         while(cursor.moveToNext()){
             String lat = cursor.getString(cursor.getColumnIndexOrThrow(MemoContract.MemoEntry.COLUMN_NAME_LAT));
             String lng = cursor.getString(cursor.getColumnIndexOrThrow(MemoContract.MemoEntry.COLUMN_NAME_LNG));
             POINTS[N++] = new Point(Double.parseDouble(lat) * 10000, Double.parseDouble(lng) * 10000);
         }
 
-        //나의 위치는 따로 저장.
+        //내 위치는 따로 저장해준다.
         Point MY_POINTS = POINTS[0];
-
-        //y를 우선으로 '/' 처럼 아래에서 위로 정렬
+        //y를 우선으로 '/'처럼 아래에서 위로 쭉 정렬을 해준다.
         Arrays.sort(POINTS,0 , N, new Comparator<Point>() {
             @Override
             public int compare(Point a, Point b) {
@@ -239,7 +255,7 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        //이제 0을 기준으로 상대 위치를 새롭게 정의해준다. 이를 위해서 아래를 우선적으로 정렬한 것이다.
+        //이제 0을 기준으로 상대 위치를 새롭게 정의해준다.(이를 위해서 아래를 우선적으로 정렬한 것이다.
         for (int i = 1; i < N; i++) {
             POINTS[i].p = POINTS[i].x - POINTS[0].x;
             POINTS[i].q = POINTS[i].y - POINTS[0].y;
@@ -269,7 +285,7 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        // Stack 에는 데이터 절약을 위해 Index 만 저장
+        //스택에는 데이터를 절약하기 위해서 index만 담아준다.
         Stack<Integer> stack = new Stack<>();
         stack.add(0);
         stack.add(1);
@@ -280,7 +296,6 @@ public class MainActivity extends AppCompatActivity {
             while(stack.size() >= 2){
                 int first = stack.pop();
                 int second = stack.peek();
-
                 //들어있는 점들을 확인하여서 가장 외부의 점인지를 확인한다.
                 long ccw = find_ccw(POINTS[first], POINTS[second], POINTS[i]);
                 if (ccw > 0) {
@@ -300,6 +315,8 @@ public class MainActivity extends AppCompatActivity {
             }
         }
 
+
+        //아래는 위의 bool 값을 활용해서 메시지 창을 띄우는 부분이다.
         if(isInside){
             final Context context = this;
             AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(context);
@@ -359,6 +376,7 @@ public class MainActivity extends AppCompatActivity {
             alertDialog.show();
         }
     }
+
 
     protected static long find_dist(Point a, Point b) {
 
