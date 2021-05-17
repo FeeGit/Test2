@@ -14,6 +14,7 @@ import android.content.Intent;
 import android.content.IntentSender;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
+import android.graphics.Point;
 import android.location.Location;
 import android.os.Build;
 import android.os.Bundle;
@@ -44,7 +45,7 @@ public class MainActivity extends AppCompatActivity {
     int LOCATION_REQUEST_CODE = 10001;
 
     static int N = 0;
-    static Point[] POINT = new Point[20];
+    static Point[] POINTS = new Point[300];
 
     FusedLocationProviderClient fusedLocationProviderClient;
     LocationRequest locationRequest;
@@ -66,15 +67,15 @@ public class MainActivity extends AppCompatActivity {
                 //커서에 담아서
                 Cursor cursor =  dbHelper.getReadableDatabase().query(MemoContract.MemoEntry.TABLE_NAME, null, null, null,null,null,null,null);
                 //전체를 배열에 담아준다.
-                cursor.moveToNext();
-                String lat = cursor.getString(cursor.getColumnIndexOrThrow(MemoContract.MemoEntry.COLUMN_NAME_LAT));
-                String lng = cursor.getString(cursor.getColumnIndexOrThrow(MemoContract.MemoEntry.COLUMN_NAME_LNG));
-                POINTS[++N] = new Point(Double.parseDouble(lat) * 10000, Double.parseDouble(lng) * 10000);
-
+                while(cursor.moveToNext()) {
+                    String lat = cursor.getString(cursor.getColumnIndexOrThrow(MemoContract.MemoEntry.COLUMN_NAME_LAT));
+                    String lng = cursor.getString(cursor.getColumnIndexOrThrow(MemoContract.MemoEntry.COLUMN_NAME_LNG));
+                    POINTS[N++] = new Point(Double.parseDouble(lat) * 10000, Double.parseDouble(lng) * 10000);
+                }
                 //내 위치는 따로 저장해준다.
                 Point MY_POINTS = POINTS[0];
                 //y를 우선으로 '/'처럼 아래에서 위로 쭉 정렬을 해준다.
-                Arrays.sort(POINTS,0 , N, new Comparator<Point>() {
+                Arrays.sort(POINTS,0 , N, new Comparator<Point>() {     // 오류부분.
                     @Override
                     public int compare(Point a, Point b) {
                         if (a.y != b.y) {
@@ -151,65 +152,67 @@ public class MainActivity extends AppCompatActivity {
                     }
                 }
 
-                //아래는 위의 bool 값을 활용해서 메시지 창을 띄우는 부분이다.
-                if(isInside){
-                    final Context context = this;
-                    AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(context);
 
-                    alertDialogBuilder.setTitle("위험경보");
-
-                    alertDialogBuilder
-                            .setMessage("위험지역에 위치하였습니다.")
-                            .setCancelable(false)
-                            .setPositiveButton("삭제",
-                                    new DialogInterface.OnClickListener() {
-                                        public void onClick(
-                                                DialogInterface dialog, int id) {
-                                            dialog.cancel();
-                                        }
-                                    })
-                            .setNegativeButton("취소",
-                                    new DialogInterface.OnClickListener() {
-                                        public void onClick(
-                                                DialogInterface dialog, int id) {
-                                            // 다이얼로그를 취소한다
-                                            dialog.cancel();
-                                        }
-                                    });
-
-                    // 다이얼로그 생성
-                    AlertDialog alertDialog = alertDialogBuilder.create();
-                    alertDialog.show();
-                }
-                else{
-                    final Context context = this;
-                    AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(context);
-
-                    alertDialogBuilder.setTitle("경보 아님");
-
-                    alertDialogBuilder
-                            .setMessage("경보가 아니에요")
-                            .setCancelable(false)
-                            .setPositiveButton("삭제",
-                                    new DialogInterface.OnClickListener() {
-                                        public void onClick(
-                                                DialogInterface dialog, int id) {
-                                            dialog.cancel();
-                                        }
-                                    })
-                            .setNegativeButton("취소",
-                                    new DialogInterface.OnClickListener() {
-                                        public void onClick(
-                                                DialogInterface dialog, int id) {
-                                            // 다이얼로그를 취소한다
-                                            dialog.cancel();
-                                        }
-                                    });
-
-                    // 다이얼로그 생성
-                    AlertDialog alertDialog = alertDialogBuilder.create();
-                    alertDialog.show();
-                }
+                PopMessage(isInside);
+//                //아래는 위의 bool 값을 활용해서 메시지 창을 띄우는 부분이다.
+//                if(isInside){
+//                    final Context context = this;
+//                    AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(context);
+//
+//                    alertDialogBuilder.setTitle("위험경보");
+//
+//                    alertDialogBuilder
+//                            .setMessage("위험지역에 위치하였습니다.")
+//                            .setCancelable(false)
+//                            .setPositiveButton("삭제",
+//                                    new DialogInterface.OnClickListener() {
+//                                        public void onClick(
+//                                                DialogInterface dialog, int id) {
+//                                            dialog.cancel();
+//                                        }
+//                                    })
+//                            .setNegativeButton("취소",
+//                                    new DialogInterface.OnClickListener() {
+//                                        public void onClick(
+//                                                DialogInterface dialog, int id) {
+//                                            // 다이얼로그를 취소한다
+//                                            dialog.cancel();
+//                                        }
+//                                    });
+//
+//                    // 다이얼로그 생성
+//                    AlertDialog alertDialog = alertDialogBuilder.create();
+//                    alertDialog.show();
+//                }
+//                else{
+//                    final Context context = this;
+//                    AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(context);
+//
+//                    alertDialogBuilder.setTitle("경보 아님");
+//
+//                    alertDialogBuilder
+//                            .setMessage("경보가 아니에요")
+//                            .setCancelable(false)
+//                            .setPositiveButton("삭제",
+//                                    new DialogInterface.OnClickListener() {
+//                                        public void onClick(
+//                                                DialogInterface dialog, int id) {
+//                                            dialog.cancel();
+//                                        }
+//                                    })
+//                            .setNegativeButton("취소",
+//                                    new DialogInterface.OnClickListener() {
+//                                        public void onClick(
+//                                                DialogInterface dialog, int id) {
+//                                            // 다이얼로그를 취소한다
+//                                            dialog.cancel();
+//                                        }
+//                                    });
+//
+//                    // 다이얼로그 생성
+//                    AlertDialog alertDialog = alertDialogBuilder.create();
+//                    alertDialog.show();
+//                }
 
             }
         }
@@ -354,13 +357,72 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void PopMessage(boolean isInside){
+        //아래는 위의 bool 값을 활용해서 메시지 창을 띄우는 부분이다.
+        if(isInside){
+            final Context context = this;
+            AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(context);
+
+            alertDialogBuilder.setTitle("위험경보");
+
+            alertDialogBuilder
+                    .setMessage("위험지역에 위치하였습니다.")
+                    .setCancelable(false)
+                    .setPositiveButton("삭제",
+                            new DialogInterface.OnClickListener() {
+                                public void onClick(
+                                        DialogInterface dialog, int id) {
+                                    dialog.cancel();
+                                }
+                            })
+                    .setNegativeButton("취소",
+                            new DialogInterface.OnClickListener() {
+                                public void onClick(
+                                        DialogInterface dialog, int id) {
+                                    // 다이얼로그를 취소한다
+                                    dialog.cancel();
+                                }
+                            });
+
+            // 다이얼로그 생성
+            AlertDialog alertDialog = alertDialogBuilder.create();
+            alertDialog.show();
+        }
+        else{
+            final Context context = this;
+            AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(context);
+
+            alertDialogBuilder.setTitle("경보 아님");
+
+            alertDialogBuilder
+                    .setMessage("경보가 아니에요")
+                    .setCancelable(false)
+                    .setPositiveButton("삭제",
+                            new DialogInterface.OnClickListener() {
+                                public void onClick(
+                                        DialogInterface dialog, int id) {
+                                    dialog.cancel();
+                                }
+                            })
+                    .setNegativeButton("취소",
+                            new DialogInterface.OnClickListener() {
+                                public void onClick(
+                                        DialogInterface dialog, int id) {
+                                    // 다이얼로그를 취소한다
+                                    dialog.cancel();
+                                }
+                            });
+
+            // 다이얼로그 생성
+            AlertDialog alertDialog = alertDialogBuilder.create();
+            alertDialog.show();
+        }
 
     }
 
     //이제 마지막이다. convex hull 알고리즘을 활용해보았다.
     //http://woowabros.github.io/experience/2018/03/31/hello-geofence.html(이 부분을 참고하면, 비슷한 방식의 문제해결 방법을 볼 수 있다.)
 //    static int N = 0;
-    static Point[] POINTS = new Point[20];
+    //static Point[] POINTS = new Point[300];
 
     @RequiresApi(api = Build.VERSION_CODES.M)
     public void jugementClicked() {
