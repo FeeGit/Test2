@@ -343,10 +343,10 @@ public class MainActivity extends AppCompatActivity {
             final Context context = this;
             AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(context);
 
-            alertDialogBuilder.setTitle("내부에 있음");
+            alertDialogBuilder.setTitle("실내 알림");
 
             alertDialogBuilder
-                    .setMessage("위험지역에 위치하였습니다.")
+                    .setMessage("지정구역 내부에 위치하였습니다.")
                     .setCancelable(false)
                     .setPositiveButton("삭제",
                             new DialogInterface.OnClickListener() {
@@ -372,10 +372,10 @@ public class MainActivity extends AppCompatActivity {
             final Context context = this;
             AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(context);
 
-            alertDialogBuilder.setTitle("경보 아님");
+            alertDialogBuilder.setTitle("실외 알림");
 
             alertDialogBuilder
-                    .setMessage("경보가 아니에요")
+                    .setMessage("지정구역 외부에 위치하였습니다.")
                     .setCancelable(false)
                     .setPositiveButton("삭제",
                             new DialogInterface.OnClickListener() {
@@ -592,18 +592,18 @@ public class MainActivity extends AppCompatActivity {
             dP = 0; // 여기에 기울기 따로 저장 후, 정렬 다시하기.
         }
 
-        public Point(double x, double y, long p, long q){
-            this.x = (long) x;
-            this.y = (long) y;
-            this.p=p;
-            this.q=q;
-        }
-
-        public Point(long x, long y) {
-            this.x = x;
-            this.y = y;
-            p=1;
-            q=0;
-        }
+//        public Point(double x, double y, long p, long q){
+//            this.x = (long) x;
+//            this.y = (long) y;
+//            this.p=p;
+//            this.q=q;
+//        }
+//
+//        public Point(long x, long y) {
+//            this.x = x;
+//            this.y = y;
+//            p=1;
+//            q=0;
+//        }
     }
 }
