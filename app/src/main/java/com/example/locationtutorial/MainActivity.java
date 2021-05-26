@@ -75,12 +75,6 @@ public class MainActivity extends AppCompatActivity {
                 //내 위치는 따로 저장해준다.
                 Point MY_POINTS = POINTS[0];
 
-                //이제 0을 기준으로 상대 위치를 새롭게 정의해준다.(이를 위해서 아래를 우선적으로 정렬한 것이다.
-                //0,0이 현 위치가 되는 것이다. 이상 없음. 위 정렬 과정 후 이미 POINTS[0]은 현위치가 아니다.
-                for (int i = 1; i < N; i++) {
-                    POINTS[i].p = POINTS[i].x - MY_POINTS.x;
-                    POINTS[i].q = POINTS[i].y - MY_POINTS.y;
-                }
                 //y를 우선으로 '/'처럼 아래에서 위로 쭉 정렬을 해준다. y좌표 오름차순으로 배열에 재 저장.[1~4] // 원점까지 재 정렬한다.
                 Arrays.sort(POINTS,0, N-1, new Comparator<Point>() {
                     @Override
@@ -101,30 +95,70 @@ public class MainActivity extends AppCompatActivity {
 
                 //이제 0을 기준으로 상대 위치를 새롭게 정의해준다.(이를 위해서 아래를 우선적으로 정렬한 것이다.
                 //0,0이 현 위치가 되는 것이다. 이상 없음. 위 정렬 과정 후 이미 POINTS[0]은 현위치가 아니다.
+                for (int i = 1; i < N; i++) {
+                    POINTS[i].p = POINTS[i].x - POINTS[0].x;
+                    POINTS[i].q = POINTS[i].y - POINTS[0].y;
+                    POINTS[i].dP = POINTS[i].q / (double)POINTS[i].p;
+                }
 
-                //이제 기준점 0 을 제외한 것들을 상대위치를 활용하여 정렬. ccw(반시계 방향으로)로 정렬
-                Arrays.sort(POINTS,1 , N-1, new Comparator<Point>() {
+                //이제 0을 기준으로 상대 위치를 새롭게 정의해준다.(이를 위해서 아래를 우선적으로 정렬한 것이다.
+                //0,0이 현 위치가 되는 것이다. 이상 없음. 위 정렬 과정 후 이미 POINTS[0]은 현위치가 아니다.
+
+                Arrays.sort(POINTS,1, N, new Comparator<Point>() {
                     @Override
                     public int compare(Point a, Point b) {
-                        if(a.q*b.p != a.p*b.q){
-                            if(a.q*b.p < a.p*b.q)
-                                return 1;
-                            else
-                                return -1;
-                        }
-                        if (a.y != b.y) {
-                            if(a.y < b.y){
-                                return 1;
+                        if (a.dP != b.dP) {
+                            if(a.dP > 0 && b.dP > 0) {
+
+                                if (a.dP < b.dP) {
+                                    return -1;
+                                } else {
+                                    return 1;
+                                }
+                            } else{
+                                if(a.dP > 0 && b.dP < 0){   //b.dP만 음수
+                                    return -1;
+                                } else if(a.dP < 0 && b.dP > 0){    //a.dP만 양수
+                                    return 1;
+                                } else{     //둘다 음수
+                                    if(a.dP < b.dP){
+                                        return 1;
+                                    } else {
+                                        return -1;
+                                    }
+                                }
                             }
-                            else{
-                                return -1;
-                            }
                         }
-                        if(a.x < b.x){
-                            return 1;} else{
-                        return -1;}
+                        if(a.x < b.x)
+                            return -1;
+                        return 1;
                     }
                 });
+                //이제 기준점 0 을 제외한 것들을 상대위치를 활용하여 정렬. ccw(반시계 방향으로)로 정렬
+//                Arrays.sort(POINTS,1 , N, new Comparator<Point>() {
+//                    @Override
+//                    public int compare(Point a, Point b) {
+//                        double dA = a.q/(double)a.p;
+//                        double dB = b.q/(double)b.p;
+//                        if(dA != dB){//a.q*b.p != a.p*b.q){
+//                            if(dA < dB)//a.q*b.p < a.p*b.q)
+//                                return -1;
+//                            else
+//                                return 1;
+//                        }
+//                        if (a.y != b.y) {
+//                            if(a.y < b.y){
+//                                return -1;
+//                            }
+//                            else{
+//                                return 1;
+//                            }
+//                        }
+//                        if(a.x < b.x)
+//                            return -1;
+//                        return 1;
+//                    }
+//                });
 
                 //스택에는 데이터를 절약하기 위해서 index만 담아준다.
                 Stack<Integer> stack = new Stack<>();
@@ -151,7 +185,7 @@ public class MainActivity extends AppCompatActivity {
 
                 //이제 나의 위치가 영역의 내부인지 외부인지 확인을 해주자.
                 boolean isInside = true;
-                for(int i=1;i<stack.size();i++){
+                for(int i=0;i<stack.size();i++){
                     if(POINTS[stack.get(i)].x == MY_POINTS.x && POINTS[stack.get(i)].y == MY_POINTS.y){
                         isInside = false;
                     }
@@ -309,7 +343,7 @@ public class MainActivity extends AppCompatActivity {
             final Context context = this;
             AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(context);
 
-            alertDialogBuilder.setTitle("위험경보");
+            alertDialogBuilder.setTitle("내부에 있음");
 
             alertDialogBuilder
                     .setMessage("위험지역에 위치하였습니다.")
@@ -548,12 +582,14 @@ public class MainActivity extends AppCompatActivity {
         long x, y;
         //기준점으로부터의 상대 위치
         long p,q;
+        double dP;
 
         public Point(double x, double y) {
             this.x = (long) x;
             this.y = (long) y;
             p=0;
             q=0;
+            dP = 0; // 여기에 기울기 따로 저장 후, 정렬 다시하기.
         }
 
         public Point(double x, double y, long p, long q){
