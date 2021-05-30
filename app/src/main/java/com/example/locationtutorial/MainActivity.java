@@ -16,6 +16,9 @@ import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.graphics.Point;
 import android.location.Location;
+import android.media.AudioManager;
+import android.media.MediaPlayer;
+import android.media.SoundPool;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Looper;
@@ -317,6 +320,9 @@ public class MainActivity extends AppCompatActivity {
     public void PopMessage(boolean isInside){
         //아래는 위의 bool 값을 활용해서 메시지 창을 띄우는 부분이다.
         if(isInside){
+            //val toneGen1 = ToneGenerator(AudioManager.STREAM_MUSIC, 100);
+            final MediaPlayer mediaPlayer = MediaPlayer.create(this, R.raw.stopbig);
+            mediaPlayer.start();
             final Context context = this;
             AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(context);
 
@@ -344,35 +350,36 @@ public class MainActivity extends AppCompatActivity {
             // 다이얼로그 생성
             AlertDialog alertDialog = alertDialogBuilder.create();
             alertDialog.show();
+
         }
         else{
-            final Context context = this;
-            AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(context);
-
-            alertDialogBuilder.setTitle("실외 알림");
-
-            alertDialogBuilder
-                    .setMessage("지정구역 외부에 위치하였습니다.")
-                    .setCancelable(false)
-                    .setPositiveButton("삭제",
-                            new DialogInterface.OnClickListener() {
-                                public void onClick(
-                                        DialogInterface dialog, int id) {
-                                    dialog.cancel();
-                                }
-                            })
-                    .setNegativeButton("취소",
-                            new DialogInterface.OnClickListener() {
-                                public void onClick(
-                                        DialogInterface dialog, int id) {
-                                    // 다이얼로그를 취소한다
-                                    dialog.cancel();
-                                }
-                            });
-
-            // 다이얼로그 생성
-            AlertDialog alertDialog = alertDialogBuilder.create();
-            alertDialog.show();
+//            final Context context = this;
+//            AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(context);
+//
+//            alertDialogBuilder.setTitle("실외 알림");
+//
+//            alertDialogBuilder
+//                    .setMessage("지정구역 외부에 위치하였습니다.")
+//                    .setCancelable(false)
+//                    .setPositiveButton("삭제",
+//                            new DialogInterface.OnClickListener() {
+//                                public void onClick(
+//                                        DialogInterface dialog, int id) {
+//                                    dialog.cancel();
+//                                }
+//                            })
+//                    .setNegativeButton("취소",
+//                            new DialogInterface.OnClickListener() {
+//                                public void onClick(
+//                                        DialogInterface dialog, int id) {
+//                                    // 다이얼로그를 취소한다
+//                                    dialog.cancel();
+//                                }
+//                            });
+//
+//            // 다이얼로그 생성
+//            AlertDialog alertDialog = alertDialogBuilder.create();
+//            alertDialog.show();
         }
 
     }
