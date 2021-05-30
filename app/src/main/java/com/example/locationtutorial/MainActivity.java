@@ -41,6 +41,8 @@ import com.google.android.gms.tasks.Task;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.Stack;
+import java.util.Timer;
+import java.util.TimerTask;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -49,6 +51,7 @@ public class MainActivity extends AppCompatActivity {
 
     static int N = 0;
     static Point[] POINTS = new Point[20];
+    Timer timer;
 
     FusedLocationProviderClient fusedLocationProviderClient;
     LocationRequest locationRequest;
@@ -383,8 +386,17 @@ public class MainActivity extends AppCompatActivity {
                             });
 
             // 다이얼로그 생성
-            AlertDialog alertDialog = alertDialogBuilder.create();
+            final AlertDialog alertDialog = alertDialogBuilder.create();
             alertDialog.show();
+
+            timer = new Timer();
+            timer.schedule(new TimerTask() {
+                @Override
+                public void run() {
+                    alertDialog.dismiss();
+                }
+            }, 1800);
+
         }
 
     }
