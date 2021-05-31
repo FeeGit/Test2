@@ -24,6 +24,8 @@ import android.os.Bundle;
 import android.os.Looper;
 import android.util.Log;
 import android.view.View;
+import android.widget.Button;
+import android.widget.Toast;
 
 import com.google.android.gms.common.api.ResolvableApiException;
 import com.google.android.gms.location.FusedLocationProviderClient;
@@ -48,6 +50,7 @@ public class MainActivity extends AppCompatActivity {
 
     private static final String TAG = "MainActivity";
     int LOCATION_REQUEST_CODE = 10001;
+    final Context context = this;
 
     static int N = 0;
     static Point[] POINTS = new Point[20];
@@ -193,6 +196,35 @@ public class MainActivity extends AppCompatActivity {
         locationRequest.setInterval(4000);      //업데이트 간격 4000ms
         locationRequest.setFastestInterval(2000);       //빠르면 2000ms
         locationRequest.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
+    }
+
+    public void findDestination(View view){
+        switch (view.getId()){
+            case R.id.destinationButton:
+
+                final CharSequence[] items = {"사과", "딸기", "오렌지", "수박"};
+                AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(context);
+
+                //제목 세팅
+                alertDialogBuilder.setTitle("선택 목록 대화 상자");
+                alertDialogBuilder.setItems(items, new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int id) {
+
+                        //프로그램 종료
+                        Toast.makeText(getApplicationContext(), items[id] + "선택했습니다.", Toast.LENGTH_SHORT).show();
+                        dialog.dismiss();
+                    }
+                });
+
+                //다이얼로그 생성
+                AlertDialog alertDialog = alertDialogBuilder.create();
+                alertDialog.show();
+                break;
+
+                //버튼 추가하면 이후 case를 통하여 생성.
+        }
+
     }
 
     public void moveMarkerList(View view) {
