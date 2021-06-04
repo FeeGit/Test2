@@ -390,7 +390,7 @@ public class MainActivity extends AppCompatActivity {
         }
         else{
 
-            final MediaPlayer mediaPlayer = MediaPlayer.create(this, R.raw.stopbig);
+            final MediaPlayer mediaPlayer = MediaPlayer.create(this, R.raw.beep01);
             mediaPlayer.start();
 
             final Context context = this;
